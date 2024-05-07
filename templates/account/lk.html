@@ -1,0 +1,123 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    <style>
+        .container {
+            margin-top: 100px;
+        }
+        h2, p {
+            margin-bottom: 0;
+        }
+        .avatar-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .avatar-container svg {
+            max-width: 100%;
+            height: auto;
+            border-radius: 50%;
+        }
+    </style>
+
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-md-4">
+                <div class="avatar-container">
+                    {% if is_avatar %}
+                        <div class="img-container mt-3" style="">
+                             <img src="/static/img/{{ nickname }}.jpg" class="card-img-top" alt="...">
+                        </div>
+                    {% endif %}
+
+                    <h2>{{ nickname }}</h2>
+                    <h3>{{ full_name }}</h3>
+                    <h4>Рейтинг: {{ rating }}/5</h4>
+                </div>
+            </div>
+        </div>
+        <hr>
+        <div class="row mt-4">
+            <div class="col-md-12">
+                <h3>Мои категории</h3>
+                <a href="{% url 'edit_category' %}" id="edit-category-btn" class="btn btn-outline-primary">Изменить</a><br><br>
+                <div class="row">
+                    <div class="col-3">
+                        <ul class="list-group">
+                            {% for category in categories %}
+                                <li class="list-group-item">{{ category.title }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <hr>
+        <div class="row mt-4">
+            <div class="col-md-12">
+                <h3>Мои объявления</h3>
+                <a href="{% url 'new_ad' %}" class="btn btn-outline-success">Создать объявление</a><br><br>
+                <div class="row">
+                    {% for ad in ads %}
+                        <div class="col-3">
+                            <div class="card h-100">
+                                <a class="text-black" href="/ad/{{ ad.identity }}" style="text-decoration: none">
+                                <div class="img-container mt-3" style="max-width: 60%; margin: 0 auto">
+                                     <img src="/static/img/{{ ad.identity }}_0.jpg" class="card-img-top" alt="...">
+                                </div>
+                                <div class="card-body">
+                                    <h5 class="card-title">
+                                    {% if ad.is_visible %}
+                                        <span class="text-success">Активно</span>
+                                    {% else %}
+                                        <span class="text-danger">Не активно</span>
+                                    {% endif %}<br>
+                                    {{ ad.title }}
+                                    </h5>
+                                    <p class="card-text" style="overflow: hidden; text-overflow: ellipsis; height: 100px;">
+                                    <b>{{ ad.price }} руб.</b><br><br>
+                                    {{ ad.updated_at }}
+                                    </p>
+                                </div>
+                                </a>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        <hr>
+        <div class="row mt-4">
+            <div class="col-md-12">
+                <h3>Мои отзывы</h3>
+                <div class="row">
+                    {% for review in reviews %}
+                        <div class="col-12">
+                            <div class="card h-100">
+                                <a class="text-black" href="/profile/{{ request.user.username }}/review/{{ review.identity }}" style="text-decoration: none">
+                                <div class="card-body">
+                                    <h4 class="card-title">
+                                        {{ review.reviewer }}
+                                    </h4>
+                                    <h5 class="card-title">
+                                        {{ review.mark }}/5
+                                    </h5>
+                                    <p class="card-text" style="overflow: hidden; text-overflow: ellipsis; height: 100px;">
+                                        {{ review.text }}
+                                    </p>
+                                    <p class="card-text">
+                                        {{ review.updated_at }} (UTC)
+                                    </p>
+                                </div>
+                                </a>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+                <br>
+            </div>
+        </div>
+    </div>
+
+{% endblock %}

@@ -1,0 +1,138 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+    <div id="alert" style="display: none;"></div>
+    <div id="popup" style="display: none;"></div>
+    <div class="col-12">
+        <div class="bg-light mt-3 mb-3 p-5 rounded">
+            <div class="text-center">
+                <h1>ФИО</h1>
+                <p class="lead">
+                    <span id="full_name">{{ full_name }}</span>
+                    <div style="max-width: 60%; margin: 0 auto">
+                        {{ form_edit_full_name }}
+                        <div id="btn-sector" class="mt-3">
+                            <button type="button" id="name-change-btn" class="btn btn-outline-info">Изменить</button>
+                        </div>
+                    </div>
+                </p>
+            </div>
+        </div>
+
+        <div class="bg-light mt-3 mb-3 p-5 rounded">
+            <div class="text-center">
+                <h1>Аватарка</h1>
+                <p class="lead">
+                    {% if is_avatar %}
+                        <div class="img-container mt-3" style="max-width: 60%; margin: 0 auto">
+                             <img src="/static/img/{{ request.user.username }}.jpg" class="card-img-top" alt="...">
+                        </div>
+                    {% else %}
+                        <div>Нет аватарки</div>
+                    {% endif %}
+                    <button class="btn btn-outline-info mt-3" data-bs-toggle="modal" data-bs-target="#staticBackdrop">Изменить</button>
+
+                    <div class="modal fade" id="staticBackdrop" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">
+                      <div class="modal-dialog">
+                        <div class="modal-content">
+                          <div class="modal-header">
+                            <h1 class="modal-title fs-5" id="staticBackdropLabel">Добавление аватарки</h1>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                          </div>
+                          <div class="modal-body">
+                            <form method="post" id="uploadForm" enctype="multipart/form-data">
+                                {% csrf_token %}
+                                <div class="mb-3">
+                                    <input type="file" class="form-control" name="photo" accept=".jpg" required>
+                                </div>
+                                <button type="submit" class="btn btn-primary">Загрузить</button>
+                            </form>
+                          </div>
+                          <div class="modal-footer">
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                </p>
+            </div>
+        </div>
+    </div>
+    </div>
+</div>
+    <script>
+        $(document).ready(function() {
+            function changeClass() {
+                let inputs = document.querySelectorAll("input");
+                inputs.forEach(function (input) {
+                    input.classList.add("form-control");
+                });
+            }
+
+            changeClass()
+
+            $("#uploadForm").submit(function (e) {
+                e.preventDefault();
+
+                let formData = new FormData(this);
+
+                $.ajax({
+                    type: "POST",
+                    data: formData,
+                    processData: false,
+                    contentType: false,
+                    success: function (response) {
+                        $('#staticBackdrop').modal("hide");
+
+                        if (response.status === "success") {
+                            $("#popup").html(`<div class="alert alert-success alert-dismissible mt-3" role="alert"><div><h5 class="text-black text-center">${response.message}</h5><p class="text-center"></p></div><button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button></div>`).show();
+
+                            setTimeout(function () {
+                                window.location.reload();
+                            }, 2000);
+                        } else if (response.status === "failed") {
+                            $("#popup").html(`<div class="alert alert-danger alert-dismissible mt-3" role="alert"><div><h5 class="text-black text-center">${response.message}</h5><p class="text-center"></p></div><button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button></div>`).show();
+                        }
+                    },
+                    error: function (xhr, status, error) {
+                        console.error(error);
+                    }
+                });
+            });
+
+            function performAjaxRequest(_name) {
+                let data = {
+                    new_name: $("#id_full_name_new").val(),
+                    csrfmiddlewaretoken: "{{ csrf_token }}"
+                }
+
+                $.ajax({
+                    type: "POST",
+                    data: data,
+                    dataType: "json",
+                    success: function (response) {
+                        if (response.status === "success") {
+                            $("#full_name").text(data["new_name"])
+                            $("#popup").html(`<div class="alert alert-success alert-dismissible mt-3" role="alert"><div><h5 class="text-black text-center">${response.message}</h5><p class="text-center"></p></div><button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button></div>`).show();
+
+                        } else if (response.status === "failed") {
+                            $("#alert").html("<div class='alert alert-danger'>" + response.message + "</div>").show();
+                        } else {
+                            console.log("error")
+                        }
+                    },
+                    error: function (xhr, status, error) {
+                        $("#alert").html("<div class='alert alert-danger'>" + error + "</div>").show();
+                        console.log(error)
+                    }
+                });
+            }
+
+            $("#name-change-btn").click(function () {
+                performAjaxRequest();
+            });
+        });
+    </script>
+
+{% endblock %}

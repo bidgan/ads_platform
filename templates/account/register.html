@@ -1,0 +1,61 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    <div class="container">
+        <div class="row">
+            <div class="col-12 mt-3 login-form">
+                <h2 class="text-center mb-4">Регистрация</h2>
+                <form method="post">
+                    {% if message %}
+                        {% if message.0 == "True" %}
+                            <div class="alert alert-success text-center" role="alert">
+                        {% elif message.0 == "False" %}
+                            <div class="alert alert-danger text-center" role="alert">
+                        {% endif %}
+                            {{ message.1 }}
+                        </div>
+                    {% endif %}
+
+                    {% if form.errors %}
+                        {% for field in form %}
+                            {% for error in field.errors %}
+                                {{ error }}<br>
+                            {% endfor %}
+                        {% endfor %}
+
+                        {% for error in form.non_field_errors %}
+                            {{ error }}<br>
+                        {% endfor %}
+                    {% endif %}
+
+                    {% csrf_token %}
+                    {% for field in form %}
+                        {{ field }}
+
+                        {{ field.help_text }}
+                    {% endfor %}
+
+                    <button type="submit" class="btn btn-primary btn-block">Зарегистрироваться</button><br>
+                    <a href="{% url 'login' %}">Уже зарегистрированы?</a>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        .login-form * {
+            margin-bottom: 1rem;
+        }
+    </style>
+    <script>
+        // Функция для изменения класса кнопки
+        function changeClass() {
+            let inputs = document.getElementsByTagName("input");
+            for (let i = 0; i < inputs.length; i++) {
+                inputs[i].classList.add("form-control");
+            }
+        }
+
+        changeClass();
+    </script>
+{% endblock %}

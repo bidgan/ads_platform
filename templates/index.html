@@ -1,0 +1,121 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    <div class="container col-12 mt-3">
+        <div id="alert" style="display:none;"></div>
+        <h3>Случайные объявления</h3>
+        <div class="mb-3">
+            <button class="btn btn-secondary" type="button" data-bs-toggle="offcanvas" data-bs-target="#filterOffcanvas">
+              Фильтр по категориям
+            </button>
+
+            <div class="offcanvas offcanvas-end" tabindex="-1" id="filterOffcanvas" aria-labelledby="filterOffcanvasLabel">
+              <div class="offcanvas-header">
+                <h5 class="offcanvas-title" id="filterOffcanvasLabel">Выберите категории</h5>
+                <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+              </div>
+              <div class="offcanvas-body">
+                <form id="categoryForm">
+                    {% for cat in categories %}
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" value="{{ cat.pk }}" id="category{{ cat.pk }}">
+                            <label class="form-check-label" for="category{{ cat.pk }}">{{ cat.title}}</label>
+                        </div>
+                    {% endfor %}
+                </form>
+              </div>
+              <div class="offcanvas-footer mb-3 mx-3">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="offcanvas">Отмена</button>
+                <button type="button" class="btn btn-primary" onclick="applyFilters()">Применить</button>
+              </div>
+            </div>
+        </div>
+            <div class="row" id="adsList">
+                {% for ad in ads %}
+                    <div class="col-3 mb-3">
+                        <div class="card h-100">
+                            <a class="text-black" href="/ad/{{ ad.identity }}" style="text-decoration: none">
+                            <div class="img-container mt-3" style="max-width: 60%; margin: 0 auto">
+                                 <img src="/static/img/{{ ad.identity }}_0.jpg" class="card-img-top" alt="...">
+                            </div>
+                            <div class="card-body">
+                                <h5 class="card-title">
+                                {{ ad.title }}
+                                </h5>
+                                <p class="card-text" style="overflow: hidden; text-overflow: ellipsis; height: 100px;">
+                                <b>{{ ad.price }} руб.</b><br><br>
+                                {{ ad.updated_at }} (UTC)
+                                </p>
+                            </div>
+                            </a>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+    </div>
+<script>
+    $(document).ready(function() {
+        $('#categoryForm input[type="checkbox"]').prop("checked", false);
+
+        {% if request.user.is_authenticated %}
+            let my_categories = JSON.parse("{{ my_categories|safe }}");
+
+            my_categories.forEach(function(cat_id) {
+                $("#category" + cat_id).prop("checked", true);
+            });
+        {% endif %}
+    });
+    function applyFilters() {
+        let selectedCategories = [];
+        $('#categoryForm input:checked').each(function() {
+          selectedCategories.push($(this).val());
+        });
+
+        performAjax(selectedCategories);
+        $('#filterOffcanvas').offcanvas("hide");
+    }
+
+    function performAjax(cats) {
+        $.ajax({
+            type: "POST",
+            data: {
+                categories: cats,
+                csrfmiddlewaretoken: "{{ csrf_token }}"
+            },
+            success: function(response) {
+                if (response[0].status === "success") {
+                    $("#adsList").empty();
+                    response.slice(1).forEach(function(ad) {
+                        const formattedDate = moment.utc(ad.updated_at).locale('ru').format('D MMMM YYYY [г.] HH:mm');
+
+                        let adHTML = '<div class="col-3 mb-3">' +
+                            '<div class="card h-100">' +
+                            '<a class="text-black" href="/ad/' + ad.identity + '" style="text-decoration: none">' +
+                            '<div class="img-container mt-3" style="max-width: 60%; margin: 0 auto">' +
+                            '<img src="/static/img/' + ad.identity + '_0.jpg" class="card-img-top" alt="...">' +
+                            '</div>' +
+                            '<div class="card-body">' +
+                            '<h5 class="card-title">' + ad.title + '</h5>' +
+                            '<p class="card-text" style="overflow: hidden; text-overflow: ellipsis; height: 100px;">' +
+                            '<b>' + ad.price + ' руб.</b><br><br>' + formattedDate + ' (UTC)' +
+                            '</p>' +
+                            '</div>' +
+                            '</a>' +
+                            '</div>' +
+                            '</div>';
+                        $('#adsList').append(adHTML);
+                    });
+                } else if (response[0].status === "failed") {
+                    $("#alert").html("<div class='alert alert-danger'>" + response[0].message + "</div>").show();
+                } else {
+                    console.log("error")
+                }
+
+            },
+            error: function(xhr, status, error) {
+                $("#alert").html("<div class='alert alert-danger'>" + error + "</div>").show();
+            }
+        });
+    }
+</script>
+{% endblock %}

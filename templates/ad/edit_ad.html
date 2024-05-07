@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+{% block content %}
+    <div class="container">
+        <div class="row">
+            <div id="alert" style="display:none;"></div>
+            <div id="popup" style="display: none"></div>
+            <div class="col-12 mt-3 login-form">
+                <h2 class="text-center mb-4">Редактирование объявления</h2>
+                <button class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#staticBackdrop">Изменить фото</button>
+
+                <div class="modal fade" id="staticBackdrop" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">
+                  <div class="modal-dialog">
+                    <div class="modal-content">
+                      <div class="modal-header">
+                        <h1 class="modal-title fs-5" id="staticBackdropLabel">Изменение фото</h1>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                      </div>
+                      <div class="modal-body">
+                        <form method="post" id="uploadForm" enctype="multipart/form-data">
+                            {% csrf_token %}
+                            <div class="mb-3">
+                                <input type="file" class="form-control" name="photos[]" accept=".jpg" multiple required onchange="checkFilesCount(this)">
+                            </div>
+                            <button type="submit" class="btn btn-primary">Загрузить</button>
+                        </form>
+                      </div>
+                      <div class="modal-footer">
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <form method="post">
+                    {% if message %}
+                        {% if message.0 == "True" %}
+                            <div class="alert alert-success text-center" role="alert">
+                        {% elif message.0 == "False" %}
+                            <div class="alert alert-danger text-center" role="alert">
+                        {% endif %}
+                            {{ message.1 }}
+                        </div>
+                    {% endif %}
+
+                    {% if form.errors %}
+                        {% for field in form %}
+                            {% for error in field.errors %}
+                                {{ error }}<br>
+                            {% endfor %}
+                        {% endfor %}
+
+                        {% for error in form.non_field_errors %}
+                            {{ error }}<br>
+                        {% endfor %}
+                    {% endif %}
+
+                    {% csrf_token %}
+
+                    {{ form }}
+
+                    <button type="submit" class="btn btn-success">Изменить</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+<style>
+    .login-form * {
+        margin-bottom: 1rem;
+    }
+</style>
+<script>
+     function checkFilesCount(input) {
+        if (input.files.length > 5) {
+            alert("Вы можете выбрать не более 5 файлов");
+            input.value = "";
+        }
+    }
+
+    $(document).ready(function() {
+        $("#uploadForm").submit(function(e) {
+            e.preventDefault();
+
+            let formData = new FormData(this);
+
+            $.ajax({
+                type: "POST",
+                data: formData,
+                processData: false,
+                contentType: false,
+                success: function(response) {
+                    $('#staticBackdrop').modal("hide");
+
+                    if (response.status === "success") {
+                        $("#popup").html(`<div class="alert alert-success alert-dismissible mt-3" role="alert"><div><h5 class="text-black text-center">${response.message}</h5><p class="text-center"></p></div><button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button></div>`).show();
+
+                        setTimeout(function() {
+                            window.location.href = "{% url 'ad_page' ad_pk=id %}";
+                        }, 2000);
+                    } else if (response.status === "failed") {
+                        $("#popup").html(`<div class="alert alert-danger alert-dismissible mt-3" role="alert"><div><h5 class="text-black text-center">${response.message}</h5><p class="text-center"></p></div><button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button></div>`).show();
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error(error);
+                }
+            });
+        });
+
+        function changeClass() {
+            let inputs = document.querySelectorAll("input, textarea");
+            inputs.forEach(function(input) {
+                input.classList.add("form-control");
+            });
+            let selects = document.querySelectorAll("select");
+            selects.forEach(function(select) {
+                select.classList.add("form-select");
+            });
+        }
+
+        changeClass();
+    });
+
+
+</script>
+{% endblock %}

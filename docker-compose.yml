@@ -1,0 +1,64 @@
+version: "3.9"
+
+x-gunicorn-celery: &gunicorn
+  SECRET_KEY: ${SECRET_KEY}
+  DEBUG: ${DEBUG}
+  DJANGO_ALLOWED_HOSTS: ${DJANGO_ALLOWED_HOSTS}
+  CSRF_TRUSTED_ORIGINS: ${CSRF_TRUSTED_ORIGINS}
+  DATABASE: ${DATABASE}
+  DBUSER: ${DBUSER}
+  DBPASSWORD: ${DBPASSWORD}
+  DBHOST: ${DBHOST}
+  DBPORT: ${DBPORT}
+  CODE_RESEND_TIMEOUT: ${CODE_RESEND_TIMEOUT}
+  DOMAIN: ${DOMAIN}
+  NAME: ${NAME}
+  EMAIL_USER: ${EMAIL_USER}
+  EMAIL_PASSWORD: ${EMAIL_PASSWORD}
+
+services:
+  gunicorn:
+    container_name: gunicorn_ads
+    build: .
+    entrypoint: /usr/bin/docker-entrypoint.sh
+    volumes:
+      - ./:${PROJECT_PATH}
+    restart: "always"
+    environment: *gunicorn
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  postgres:
+    container_name: postgres_ads
+    image: postgres:16.0
+    volumes:
+      - postgres_data_ads:/var/lib/postgresql/data
+    restart: "always"
+    ports:
+      - ${DBPORT}
+    environment:
+      POSTGRES_DB: ${DATABASE}
+      POSTGRES_USER: ${DBUSER}
+      POSTGRES_PASSWORD: ${DBPASSWORD}
+    healthcheck:
+      test: "pg_isready -U ${DBUSER} -d ${DATABASE}"
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+
+  nginx:
+    container_name: nginx_ads
+    build: ./nginx
+    volumes:
+      - ./static:${PROJECT_PATH}/static
+    depends_on:
+      - gunicorn
+    ports:
+      - ${APP_PORT}:${NGINX_PORT}
+      - ${SSL_PORT}:${SSL_PORT}
+    restart: "always"
+
+volumes:
+  postgres_data_ads:

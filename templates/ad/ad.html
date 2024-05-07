@@ -1,0 +1,285 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <div class="container">
+        <div class="row justify-content-center">
+            {% if message %}
+                {% if message.0 == "True" %}
+                    <div class="alert alert-success text-center" role="alert">
+                {% elif message.0 == "False" %}
+                    <div class="alert alert-danger text-center" role="alert">
+                {% endif %}
+                    {{ message.1 }}
+                </div>
+            {% endif %}
+            <div id="alert" style="display:none;"></div>
+            <div id="popup" style="display: none"></div>
+            <div class="col-12">
+                {% if is_visible %}
+                    {% if is_owner %}
+                        <div id="ad_status" class="bg-light mt-3 p-5 rounded text-center">
+                            <h2>Объявление <span id="ad_status_text" class="text-success">активно</span></h2>
+                            <div id="btn-sector">
+                                <button type="button" id="hide-ad-btn" class="btn btn-lg btn-outline-danger">Скрыть</button>
+                            </div>
+                        </div>
+                        <div id="edit-sector" class="bg-light mt-3 p-5 rounded text-center">
+                            <button type="button" id="edit-ad-btn" class="btn btn-lg btn-outline-primary mb-3">Редактировать</button><br>
+                            <button type="button" id="delete-ad-btn" class="btn btn-lg btn-outline-danger">Удалить</button>
+                        </div>
+                    {% endif %}
+                    <div class="bg-light mt-3 mb-3 p-5 rounded">
+                      <h1 class="display-4">{{ title }}</h1>
+                      <p class="lead">
+                        <b>{{ price }} руб.</b><br><br>
+                        {% if is_photo_sent %}
+                            <div class="carousel-container mb-3" style="max-width: 40%; margin: 0 auto">
+                                <div id="carouselExample" class="carousel slide">
+                                  <div class="carousel-inner">
+                                    <div class="carousel-item active">
+                                      <img src="/static/img/{{ id }}_0.jpg" class="d-block w-100 img-fluid" alt="...">
+                                    </div>
+                                    {% if num_photos|length > 1 %}
+                                        {% for i in num_photos|slice:"1:" %}
+                                            <div class="carousel-item">
+                                              <img src="/static/img/{{ id }}_{{ i }}.jpg" class="d-block w-100 img-fluid" alt="...">
+                                            </div>
+                                        {% endfor %}
+                                    {% endif %}
+
+                                  </div>
+                                  <button class="carousel-control-prev" type="button" data-bs-target="#carouselExample" data-bs-slide="prev">
+                                    <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                                    <span class="visually-hidden">Previous</span>
+                                  </button>
+                                  <button class="carousel-control-next" type="button" data-bs-target="#carouselExample" data-bs-slide="next">
+                                    <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                                    <span class="visually-hidden">Next</span>
+                                  </button>
+                                </div>
+                            </div>
+                        {% endif %}
+                        {{ description }}<br><br>
+                        <i>#{{ category }}</i>
+                      </p>
+                      <hr class="my-3">
+                      <div class="d-flex align-items-center mb-3">
+                        <img src="/static/img/{{ seller }}.jpg" style="width: 50px; height: 50px" class="card-img mx-2" alt="...">
+                        <h4>{{ seller }}</h4>
+                        &nbsp;&nbsp;({{ rating }})
+                      </div>
+
+                      <a class="btn btn-outline-primary btn-lg" href="{% url 'other_account' profile_pk=author%}" role="button">Профиль</a>
+                    </div>
+                {% else %}
+                    {% if is_owner %}
+                        <div id="ad_status" class="bg-light mt-3 p-5 rounded text-center">
+                            <h2>Объявление <span id="ad_status_text" class="text-danger">не активно</span></h2>
+                            {% if is_photo_sent %}
+                                <div id="btn-sector">
+                                    <button type="button" id="active-ad-btn" class="btn btn-lg btn-outline-success">Показать</button>
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div id="edit-sector" class="bg-light mt-3 p-5 rounded text-center">
+                            <button type="button" id="edit-ad-btn" class="btn btn-lg btn-outline-primary mb-3">Редактировать</button><br>
+                            <button type="button" id="delete-ad-btn" class="btn btn-lg btn-outline-danger">Удалить</button>
+                        </div>
+
+                        <div class="bg-light mt-3 mb-3 p-5 rounded">
+                          <h1 class="display-4">{{ title }}</h1>
+                          <p class="lead">
+                            <b>{{ price }} руб.</b><br><br>
+                            {% if is_photo_sent %}
+                                <div class="carousel-container mb-3" style="max-width: 40%; margin: 0 auto">
+                                    <div id="carouselExample" class="carousel slide">
+                                      <div class="carousel-inner">
+                                        <div class="carousel-item active">
+                                          <img src="/static/img/{{ id }}_0.jpg" class="d-block w-100 img-fluid" alt="...">
+                                        </div>
+                                        {% if num_photos|length > 1 %}
+                                            {% for i in num_photos|slice:"1:" %}
+                                                <div class="carousel-item">
+                                                  <img src="/static/img/{{ id }}_{{ i }}.jpg" class="d-block w-100 img-fluid" alt="...">
+                                                </div>
+                                            {% endfor %}
+                                        {% endif %}
+
+                                      </div>
+                                      <button class="carousel-control-prev" type="button" data-bs-target="#carouselExample" data-bs-slide="prev">
+                                        <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                                        <span class="visually-hidden">Previous</span>
+                                      </button>
+                                      <button class="carousel-control-next" type="button" data-bs-target="#carouselExample" data-bs-slide="next">
+                                        <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                                        <span class="visually-hidden">Next</span>
+                                      </button>
+                                    </div>
+                                </div>
+                            {% else %}
+                                <b>Необходимо добавить фото</b><br>
+                                <button class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#staticBackdrop">Добавить</button>
+
+                                <div class="modal fade" id="staticBackdrop" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">
+                                  <div class="modal-dialog">
+                                    <div class="modal-content">
+                                      <div class="modal-header">
+                                        <h1 class="modal-title fs-5" id="staticBackdropLabel">Добавление фото</h1>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                      </div>
+                                      <div class="modal-body">
+                                        <form method="post" id="uploadForm" enctype="multipart/form-data">
+                                            {% csrf_token %}
+                                            <div class="mb-3">
+                                                <input type="file" class="form-control" name="photos[]" accept=".jpg" multiple required onchange="checkFilesCount(this)">
+                                            </div>
+                                            <button type="submit" class="btn btn-primary">Загрузить</button>
+                                        </form>
+                                      </div>
+                                      <div class="modal-footer">
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+
+                                <br>
+
+                            {% endif %}
+
+                            {{ description }}<br><br>
+                            <i>#{{ category }}</i>
+                          </p>
+                          <hr class="my-3">
+                          <div class="d-flex align-items-center mb-3">
+                            <img src="/static/img/{{ seller }}.jpg" style="width: 50px; height: 50px" class="card-img mx-2" alt="...">
+                            <h4>{{ seller }}</h4>
+                            &nbsp;&nbsp;({{ rating }})
+                          </div>
+
+                          <a class="btn btn-outline-primary btn-lg" href="{% url 'other_account' profile_pk=author %}" role="button">Профиль</a>
+                        </div>
+                    {% else %}
+                        <div id="ad_status" class="bg-light mt-3 p-5 rounded text-center">
+                            <h2>Объявление <span id="ad_status_text" class="text-danger">не активно</span></h2>
+                        </div>
+                    {% endif %}
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+    function checkFilesCount(input) {
+        if (input.files.length > 5) {
+            alert("Вы можете выбрать не более 5 файлов");
+            input.value = "";
+        }
+    }
+    $(document).ready(function() {
+        $("#uploadForm").submit(function(e) {
+            e.preventDefault();
+
+            let formData = new FormData(this);
+
+            $.ajax({
+                type: "POST",
+                data: formData,
+                processData: false,
+                contentType: false,
+                success: function(response) {
+                    $('#staticBackdrop').modal("hide");
+
+                    if (response.status === "success") {
+                        $("#popup").html(`<div class="alert alert-success alert-dismissible mt-3" role="alert"><div><h5 class="text-black text-center">${response.message}</h5><p class="text-center"></p></div><button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button></div>`).show();
+
+                        setTimeout(function() {
+                            window.location.reload();
+                        }, 2000);
+                    } else if (response.status === "failed") {
+                        $("#popup").html(`<div class="alert alert-danger alert-dismissible mt-3" role="alert"><div><h5 class="text-black text-center">${response.message}</h5><p class="text-center"></p></div><button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button></div>`).show();
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error(error);
+                }
+            });
+        });
+
+        function performAjaxRequest(_action) {
+            let data = {
+                action: _action,
+                csrfmiddlewaretoken: "{{ csrf_token }}"
+            }
+
+            $.ajax({
+                url: "{% url 'ad_page' ad_pk=id %}",
+                type: "POST",
+                data: data,
+                dataType: "json",
+                success: function(response) {
+                    if (response.status === "success") {
+                        if (_action === "activate") {
+                            $("#active-ad-btn").hide();
+                            $("#ad_status_text").removeClass().addClass("text-success");
+                            $("#ad_status_text").text("активно")
+                            $("#btn-sector").html('<button type="button" id="hide-ad-btn" class="btn btn-lg btn-outline-danger">Скрыть</button>');
+                            $("#popup").html('<div class="alert alert-success alert-dismissible mt-3" role="alert"><div><h5 class="text-black text-center">Объявление активно!</h5><p class="text-center"></p></div><button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button></div>').show();
+
+                            $("#hide-ad-btn").click(function() {
+                                performAjaxRequest("hide");
+                            });
+                        } else if (_action === "hide") {
+                            $("#hide-ad-btn").hide();
+                            $("#ad_status_text").removeClass().addClass("text-danger");
+                            $("#ad_status_text").text("не активно")
+                            {% if is_photo_sent %}
+                                $("#btn-sector").html('<button type="button" id="active-ad-btn" class="btn btn-lg btn-outline-success">Показать</button>');
+                            {% endif %}
+                            $("#popup").html('<div class="alert alert-success alert-dismissible mt-3" role="alert"><div><h5 class="text-black text-center">Объявление скрыто</h5><p class="text-center"></p></div><button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button></div>').show();
+
+                            $("#active-ad-btn").click(function() {
+                                performAjaxRequest("activate");
+                            });
+                        } else if (_action === "edit") {
+                            window.location.href = "{% url 'edit_ad' ad_pk=id %}";
+                        } else if (_action === "delete") {
+                            $("#popup").html(`<div class="alert alert-success alert-dismissible mt-3" role="alert"><div><h5 class="text-black text-center">${response.message}</h5><p class="text-center"></p></div><button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button></div>`).show();
+
+                            setTimeout(function() {
+                                window.location.href = "{% url 'account' %}";
+                            }, 2000);
+
+                        }
+
+                    } else if (response.status === "failed") {
+                        $("#alert").html("<div class='alert alert-danger'>" + response.message + "</div>").show();
+                    } else {
+                        console.log("error")
+                    }
+                },
+                error: function(xhr, status, error) {
+                    $("#alert").html("<div class='alert alert-danger'>" + error + "</div>").show();
+                    console.log(error)
+                }
+            });
+        }
+
+        $("#active-ad-btn").click(function() {
+            performAjaxRequest("activate");
+        });
+
+        $("#hide-ad-btn").click(function() {
+            performAjaxRequest("hide");
+        });
+
+        $("#edit-ad-btn").click(function() {
+            performAjaxRequest("edit");
+        });
+
+        $("#delete-ad-btn").click(function() {
+            performAjaxRequest("delete");
+        });
+    });
+</script>
+
+{% endblock %}

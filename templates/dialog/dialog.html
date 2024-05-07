@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        {% if message %}
+            <div class="alert {% if message.0 == 'True' %}alert-success{% else %}alert-danger{% endif %} text-center" role="alert">
+                {{ message.1 }}
+            </div>
+        {% endif %}
+        <div class="col-10">
+            <div class="parent justify-content-center align-items-center">
+                <div class="p-3 rounded">
+                    <h2 class="text-center">Диалог с {{ partner }}</h2>
+                    <hr>
+                    <div class="message-container" style="max-height: 400px; overflow-y: auto">
+                        <div class="message">
+                            {% for message in messages %}
+                                {% if message.sender != request.user %}
+                                    <div class="receive card text-dark mb-2">
+                                        <div class="card-body">
+                                            <p class="card-text">
+                                            {{ message.message }} <strong>-{{ message.sender }}</strong><br>
+                                            {{ message.created_at }}
+                                            </p>
+                                        </div>
+                                    </div>
+                                {% else %}
+                                    <div class="send card text-dark mb-2">
+                                        <div class="card-body">
+                                            <p class="card-text">
+                                            {{ message.message }}<br>
+                                            {{ message.created_at }}
+                                            </p>
+                                        </div>
+                                    </div>
+                                {% endif %}
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <div class="form mt-5">
+                        <form action="" id="message" method="POST" class="">
+                            {% csrf_token %}
+                            <textarea id="msg" name="message" class="form-control" placeholder="Сообщение" required></textarea>
+                            <button class="submit btn btn-primary mt-2" type="submit">Отправить</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function scrollToBottom() {
+        let messageContainer = $('.message-container');
+        messageContainer.scrollTop(messageContainer.prop('scrollHeight'));
+    }
+
+    $(document).on('submit', '#message', function(e){
+        e.preventDefault();
+        $.ajax({
+            type: 'POST',
+            url: "",
+            data: {
+                message: $('#msg').val(),
+                csrfmiddlewaretoken: "{{ csrf_token }}"
+            }
+        });
+        $(".parent").load(window.location.href + " .parent", function () {
+            scrollToBottom();
+        });
+    });
+    $(document).ready(function() {
+        scrollToBottom();
+
+        setInterval(function(){
+            let messageContainer = $('.message-container');
+            let prevScrollHeight = messageContainer.prop('scrollHeight');
+
+            $(".message").load(window.location.href + " .message", function() {
+                let newScrollHeight = messageContainer.prop('scrollHeight');
+                if (newScrollHeight > prevScrollHeight) {
+                    scrollToBottom();
+                }
+            });
+        }, 500);
+    });
+</script>
+{% endblock %}

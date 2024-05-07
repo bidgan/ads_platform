@@ -1,0 +1,68 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ name }}</title>
+    <link href="{% static 'css/bootstrap.min.css' %}" rel="stylesheet">
+</head>
+<body>
+    <div class="container mt-5">
+        <div class="row">
+            <div class="col-md-6 offset-md-3">
+                <div class="card">
+                    <div class="card-header">
+                        Подтверждение почты
+                    </div>
+                    <div class="card-body confirm-form">
+                        <p>Спасибо за регистрацию! Для завершения процесса, пожалуйста, подтвердите ваш адрес электронной почты.</p>
+                        <p>Мы отправили письмо с <b>кодом</b> подтверждения на вашу почту. Если вы не получили письмо, пожалуйста, проверьте папку "Спам".</p>
+                        <p>Если у вас возникли проблемы с получением письма, пожалуйста, <a href="#">свяжитесь с нами</a>.</p>
+                        <form method="post">
+                            {% if message %}
+                                {% if message.0 == "True" %}
+                                    <div class="alert alert-success text-center" role="alert">
+                                        {{ message.1 }}
+                                    </div>
+                                {% elif message.0 == "False" %}
+                                        <div class="alert alert-danger text-center" role="alert">
+                                            {{ message.1 }}
+                                        </div>
+                                {% endif %}
+                            {% endif %}
+
+                            {% csrf_token %}
+                            {{ form_confirm }}
+                            <button type="submit" class="btn btn-primary" name="btn_confirm_email">Отправить</button>
+                        </form>
+
+                        <form method="post">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-primary" name="btn_resend_email">Получить код повторно</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="{% static 'js/bootstrap.bundle.min.js' %}"></script>
+</body>
+</html>
+<style>
+    .confirm-form * {
+        margin-bottom: 0.5rem;
+    }
+</style>
+<script>
+    // Функция для изменения класса кнопки
+    function changeClass() {
+        let inputs = document.getElementsByTagName("input");
+        for (let i = 0; i < inputs.length; i++) {
+            inputs[i].classList.add("form-control");
+        }
+    }
+
+    changeClass();
+</script>

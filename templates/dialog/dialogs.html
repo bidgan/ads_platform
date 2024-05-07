@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <div class="container">
+        <div class="row justify-content-center">
+            {% if message %}
+                {% if message.0 == "True" %}
+                    <div class="alert alert-success text-center" role="alert">
+                {% elif message.0 == "False" %}
+                    <div class="alert alert-danger text-center" role="alert">
+                {% endif %}
+                    {{ message.1 }}
+                </div>
+            {% endif %}
+            <div id="alert" style="display:none;"></div>
+            <div id="popup" style="display: none"></div>
+            <div class="col-12 mt-3">
+                {% for dialog in dialogs %}
+                    <div class="col-12">
+                        <div class="card">
+                            <a class="text-black" href="{% url 'dialog' dialog_pk=dialog.pk %}" style="text-decoration: none">
+                            <div class="card-body">
+                                <h4 class="card-title">
+                                    {{ dialog.user }}
+                                </h4>
+                                <p class="card-text" style="overflow: hidden; text-overflow: ellipsis;">
+                                    {{ dialog.last_msg.message }}
+                                </p>
+                                <p class="card-text">
+                                    {{ dialog.last_msg.created_at }} (UTC)
+                                </p>
+                            </div>
+                            </a>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+
+</script>
+
+{% endblock %}
