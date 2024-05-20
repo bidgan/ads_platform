@@ -22,18 +22,26 @@
     </style>
 
     <div class="container">
+        <div id="alert" style="display:none;"></div>
+        <div id="popup" style="display: none"></div>
         <div class="row justify-content-center">
             <div class="col-md-4">
                 <div class="avatar-container">
                     {% if is_avatar %}
-                        <div class="img-container mt-3" style="">
+                        <div class="img-container mt-3" style="max-width: 60%">
                              <img src="/static/img/{{ nickname }}.jpg" class="card-img-top" alt="...">
                         </div>
                     {% endif %}
 
                     <h2>{{ nickname }}</h2>
                     <h3>{{ full_name }}</h3>
+                    {% if dormitory %}
+                        <h4>Общежитие №{{ dormitory }}</h4>
+                    {% endif %}
                     <h4>Рейтинг: {{ rating }}/5</h4>
+                    {% if request.user.is_authenticated and nickname != request.user.username %}
+                        <a id="start_dialog_btn" class="btn btn-outline-primary">Личное сообщение</a><br><br>
+                    {% endif %}
                 </div>
             </div>
         </div>
@@ -44,7 +52,7 @@
                 <h3>Объявления</h3>
                 <div class="row">
                     {% for ad in ads %}
-                        <div class="col-3">
+                        <div class="col-md-3 col-sm-6 mb-3">
                             <div class="card h-100">
                                 <a class="text-black" href="/ad/{{ ad.identity }}" style="text-decoration: none">
                                 <div class="img-container mt-3" style="max-width: 60%; margin: 0 auto">
@@ -101,5 +109,41 @@
             </div>
         </div>
     </div>
+<script>
+    $(document).ready(function() {
+        function performAjaxRequest(_action) {
+            let data = {
+                action: _action,
+                csrfmiddlewaretoken: "{{ csrf_token }}"
+            }
 
+            $.ajax({
+                type: "POST",
+                data: data,
+                success: function(response) {
+                    if (response.status === "success") {
+                        if (_action === "start_dialog") {
+                            let url = `{% url 'index' %}account/dialogs/${response.message}/`;
+                            window.location.href = url;
+                        }
+
+                    } else if (response.status === "failed") {
+                        $("#alert").html("<div class='alert alert-danger'>" + response.message + "</div>").show();
+                    } else {
+                        console.log("error")
+                    }
+                },
+                error: function(xhr, status, error) {
+                    $("#alert").html("<div class='alert alert-danger'>" + error + "</div>").show();
+                    console.log(error)
+                }
+            });
+        }
+
+        $("#start_dialog_btn").click(function() {
+            performAjaxRequest("start_dialog");
+        });
+    });
+
+</script>
 {% endblock %}

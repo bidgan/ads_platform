@@ -3,7 +3,9 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <title>{% block title %}Adversty{% endblock %}</title>
+    <link rel="shortcut icon" type="image/x-icon" href="{% static 'img/favicon.ico' %}">
     <link rel="stylesheet" type="text/css" href="{% static 'css/bootstrap.min.css' %}">
     <style>
         body {
@@ -25,6 +27,14 @@
                 <li class="nav-item">
                     <a class="nav-link" href="{% url 'account' %}">{{ request.user.username }}</a>
                 </li>
+                {% if request.user.is_staff %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="/admin/">Админ-панель</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/moderate/">Модерация</a>
+                    </li>
+                {% endif %}
                 <li class="nav-item">
                     <a class="nav-link" href="{% url 'dialogs' %}">Диалоги</a>
                 </li>

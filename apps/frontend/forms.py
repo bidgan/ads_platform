@@ -3,7 +3,7 @@ from django.contrib.auth.forms import UserCreationForm, PasswordResetForm
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 
-from apps.backend.models import Profile, Category
+from apps.backend.models import Profile, Category, Dormitory
 
 
 class AuthForm(forms.Form):
@@ -324,4 +324,11 @@ class EditCategory(forms.Form):
 		widget=forms.CheckboxSelectMultiple(),
 		required=False,
 		label="Категории"
+	)
+
+
+class EditDormitory(forms.Form):
+	dormitory = forms.ModelChoiceField(
+		queryset=Dormitory.objects.all(),
+		label="",
 	)

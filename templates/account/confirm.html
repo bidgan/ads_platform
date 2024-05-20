@@ -23,13 +23,11 @@
                             {% if message %}
                                 {% if message.0 == "True" %}
                                     <div class="alert alert-success text-center" role="alert">
-                                        {{ message.1 }}
-                                    </div>
                                 {% elif message.0 == "False" %}
-                                        <div class="alert alert-danger text-center" role="alert">
-                                            {{ message.1 }}
-                                        </div>
+                                    <div class="alert alert-danger text-center" role="alert">
                                 {% endif %}
+                                    {{ message.1 }}
+                                </div>
                             {% endif %}
 
                             {% csrf_token %}

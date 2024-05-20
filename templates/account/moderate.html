@@ -1,0 +1,73 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    <div class="container">
+        <div class="row mt-4">
+            <div class="col-md-12">
+                <h3>Объявления на удержании</h3>
+                <div class="row">
+                    <div id="alert" style="display: none;"></div>
+                    <div id="popup" style="display: none;"></div>
+                    {% for ad in ads %}
+                        <div id="{{ ad.identity }}" class="col-12 mb-3">
+                            <div class="card h-100">
+                                <a class="text-black" href="/ad/{{ ad.identity }}" style="text-decoration: none">
+                                <div class="card-body">
+                                    <h4 class="card-title">
+                                        {{ ad.title }}
+                                    </h4>
+                                    <h5 class="card-title">
+                                        {{ ad.price }}
+                                    </h5>
+                                    <p class="card-text" style="overflow: hidden; text-overflow: ellipsis; height: 100px;">
+                                        {{ ad.description }}
+                                    </p>
+                                    <p class="card-text">
+                                        {{ ad.updated_at }} (UTC)
+                                    </p>
+                                </a>
+                                    <button id="btn-allow" onclick="actionId('allow-{{ ad.identity }}')" class="btn btn-outline-success">Разрешить</button>
+                                    <button id="btn-deny" onclick="actionId('deny-{{ ad.identity }}')" class="btn btn-outline-danger">Запретить</button>
+                                </div>
+
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+                <br>
+            </div>
+        </div>
+    </div>
+<script>
+    function actionId(action_id) {
+        performAjaxRequest(action_id);
+    }
+
+    function performAjaxRequest(_action) {
+        let data = {
+            action: _action,
+            csrfmiddlewaretoken: "{{ csrf_token }}"
+        }
+
+        $.ajax({
+            type: "POST",
+            data: data,
+            success: function(response) {
+                if (response.status === "success") {
+                    let action = _action.split("-");
+                    $(`#${action[1]}`).remove()
+
+                } else if (response.status === "failed") {
+                    $("#alert").html("<div class='alert alert-danger'>" + response.message + "</div>").show();
+                } else {
+                    console.log("error")
+                }
+            },
+            error: function(xhr, status, error) {
+                $("#alert").html("<div class='alert alert-danger'>" + error + "</div>").show();
+                console.log(error)
+            }
+        });
+    }
+</script>
+{% endblock %}

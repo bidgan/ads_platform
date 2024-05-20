@@ -15,6 +15,9 @@
             <div id="alert" style="display:none;"></div>
             <div id="popup" style="display: none"></div>
             <div class="col-12 mt-3">
+                {% if not dialogs %}
+                    <h4>Диалогов пока нет</h4>
+                {% endif %}
                 {% for dialog in dialogs %}
                     <div class="col-12">
                         <div class="card">

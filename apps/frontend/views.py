@@ -8,17 +8,16 @@ from django.core.exceptions import ValidationError
 from django.db.models import Avg, Q
 from django.http import HttpResponse, Http404, JsonResponse
 from django.shortcuts import render, redirect
+from django.utils import timezone
 from django.utils.encoding import force_bytes
 from django.utils.http import urlsafe_base64_encode
 
 from apps.backend.models import Profile, Advertisement, Review, Category, Dialog, Message
 from apps.backend.views import send_mail, generate_code, generate_id, is_ajax, write_photo, delete_photo
 from apps.frontend.forms import AuthForm, ConfirmEmail, UserPasswordResetForm, ExtendedRegisterForm, NewAd, \
-	EditFullName, EditAd, NewReview, EditReview, EditCategory
+	EditFullName, EditAd, NewReview, EditReview, EditCategory, EditDormitory
 from main import settings
 from main.settings import BASE_DIR
-
-# TODO: отправлять объявления на модерацию
 
 
 NAME = settings.NAME
@@ -40,19 +39,44 @@ def index_view(request):
 		if request.method == "POST":
 			if is_ajax(request):
 				try:
-					selected_categories = request.POST.getlist("categories[]", [])
-					ads = Advertisement.objects.filter(is_visible=True, category__in=selected_categories).order_by("?")[
-						  :10]
-					data = [
-						{
-							"identity": ad.identity,
-							"title": ad.title,
-							"price": ad.price,
-							"updated_at": ad.updated_at
-						} for ad in ads]
-					data.insert(0, {"status": "success"})
+					if request.POST.getlist("categories[]", []):
+						selected_categories = request.POST.getlist("categories[]", [])
+						ads = Advertisement.objects.filter(
+							is_visible=True,
+							category__in=selected_categories,
+							is_moderated=True).order_by("?")
+						data = [
+							{
+								"identity": ad.identity,
+								"title": ad.title,
+								"price": ad.price,
+								"updated_at": ad.updated_at
+							} for ad in ads]
+						data.insert(0, {"status": "success"})
 
-					return JsonResponse(data, safe=False)
+						return JsonResponse(data, safe=False)
+					elif request.POST.get("action"):
+						if request.POST.get("action") == "search":
+							ads = Advertisement.objects.filter(
+								is_visible=True,
+								title__icontains=request.POST.get("data"),
+								is_moderated=True)
+							data = [
+								{
+									"identity": ad.identity,
+									"title": ad.title,
+									"price": ad.price,
+									"updated_at": ad.updated_at
+								} for ad in ads]
+							data.insert(0, {"status": "success"})
+
+							return JsonResponse(data, safe=False)
+					else:
+						return JsonResponse({
+							"status": "failed",
+							"message": "Error"
+						})
+
 				except Exception as e:
 					logging.error(f"{type(e).__name__}: {str(e)}")
 					return JsonResponse(
@@ -65,10 +89,15 @@ def index_view(request):
 
 		if request.user.is_authenticated:
 			my_categories = request.user.profile.categories.all()
-			ads = Advertisement.objects.filter(is_visible=True, category__in=my_categories).order_by("?")[:10]
+			ads = Advertisement.objects.filter(
+				is_visible=True,
+				category__in=my_categories,
+				is_moderated=True).order_by("?")[:10]
 			my_categories = [cat.pk for cat in my_categories]
 		else:
-			ads = Advertisement.objects.filter(is_visible=True).order_by("?")[:10]
+			ads = Advertisement.objects.filter(
+				is_visible=True,
+				is_moderated=True).order_by("?")[:10]
 
 		categories = Category.objects.filter().all()
 	except Exception as e:
@@ -103,6 +132,7 @@ def account_view(request):
 	profile = Profile.objects.filter(user=request.user).first()
 	nickname = request.user.username
 	full_name = profile.full_name
+	dormitory = profile.dormitory
 	is_avatar = profile.is_avatar
 	ads = Advertisement.objects.filter(seller=request.user).all()
 	categories = profile.categories.all()
@@ -118,6 +148,7 @@ def account_view(request):
 		{
 			"nickname": nickname,
 			"full_name": full_name,
+			"dormitory": dormitory,
 			"is_avatar": is_avatar,
 			"ads": ads,
 			"reviews": reviews,
@@ -132,13 +163,42 @@ def other_account_view(request, profile_pk):
 	user = User.objects.filter(username=profile_pk).first()
 	if not user:
 		raise Http404
+	if request.method == "POST":
+		if is_ajax(request):
+			try:
+				if request.POST.get("action") == "start_dialog":
+					users = (request.user, user)
+					dialog = Dialog.objects.filter(Q(user1__in=users) & Q(user2__in=users)).first()
+					if not dialog:
+						dialog = Dialog.objects.create(user1=request.user, user2=user)
+						dialog.save()
+
+					return JsonResponse(
+						{
+							"status": "success",
+							"message": dialog.pk
+						}
+					)
+			except Exception as e:
+				logging.error(f"{type(e).__name__}: {str(e)}")
+				return JsonResponse(
+					[{
+						"status": "failed",
+						"message": str(e.message) if str(
+							type(e).__name__) == "ValidationError" else f"{type(e).__name__}: {str(e)}",
+					}], safe=False
+				)
 	message = []
 	profile = user.profile
 	nickname = user.username
 	full_name = profile.full_name
+	dormitory = profile.dormitory
 	is_avatar = profile.is_avatar
-	ads = Advertisement.objects.filter(seller=user, is_visible=True).all()
-	reviews = Review.objects.filter(user=user).all()
+	ads = Advertisement.objects.filter(
+		seller=user,
+		is_visible=True,
+		is_moderated=True).all()
+	reviews = Review.objects.filter(user=user).order_by("-created_at").all()
 	# TODO: переписать, неэффективно
 	rating = reviews.aggregate(avg_rating=Avg("mark"))["avg_rating"]
 	if rating is None:
@@ -150,6 +210,7 @@ def other_account_view(request, profile_pk):
 		{
 			"nickname": nickname,
 			"full_name": full_name,
+			"dormitory": dormitory,
 			"is_avatar": is_avatar,
 			"ads": ads,
 			"reviews": reviews,
@@ -354,6 +415,8 @@ def settings_view(request):
 		return HttpResponse(html)
 	form_edit_full_name = EditFullName()
 	full_name = profile.full_name
+	dormitory = profile.dormitory
+	categories = profile.categories.all()
 	is_avatar = profile.is_avatar
 	if request.method == "POST":
 		if is_ajax(request):
@@ -399,7 +462,9 @@ def settings_view(request):
 		"account/settings.html",
 		{
 			"full_name": full_name,
+			"dormitory": dormitory,
 			"form_edit_full_name": form_edit_full_name,
+			"categories": categories,
 			"is_avatar": is_avatar,
 		}
 	)
@@ -448,7 +513,43 @@ def ad_view(request, ad_pk):
 				if request.POST.get("action"):
 					request_action = request.POST.get("action")
 
+					if request_action == "start_dialog":
+						if ad.seller == request.user:
+							return JsonResponse(
+								{
+									"status": "failed",
+									"message": "Продавец является текущим пользователем"
+								}
+							)
+						users = (request.user, ad.seller)
+						dialog = Dialog.objects.filter(Q(user1__in=users) & Q(user2__in=users)).first()
+						if not dialog:
+							dialog = Dialog.objects.create(user1=request.user, user2=ad.seller)
+							dialog.save()
+
+						return JsonResponse(
+							{
+								"status": "success",
+								"message": dialog.pk
+							}
+						)
+
+					if not ((request.user == ad.seller) or request.user.is_staff):
+						return JsonResponse(
+							{
+								"status": "failed",
+								"message": "Not owner"
+							}
+						)
+
 					if request_action == "activate":
+						if not ad.is_moderated:
+							return JsonResponse(
+								{
+									"status": "failed",
+									"message": "Не прошло модерацию"
+								}
+							)
 						if ad.is_photo_sent:
 							ad.is_visible = True
 							ad.save()
@@ -466,6 +567,13 @@ def ad_view(request, ad_pk):
 							)
 
 					elif request_action == "hide":
+						if not ad.is_moderated:
+							return JsonResponse(
+								{
+									"status": "failed",
+									"message": "Не прошло модерацию"
+								}
+							)
 						ad.is_visible = False
 						ad.save()
 						return JsonResponse(
@@ -492,6 +600,14 @@ def ad_view(request, ad_pk):
 						)
 
 				elif request.FILES.getlist("photos[]"):
+					if not ((request.user == ad.seller) or request.user.is_staff):
+						return JsonResponse(
+							{
+								"status": "failed",
+								"message": "Not owner"
+							}
+						)
+
 					photos = request.FILES.getlist("photos[]")
 					if len(photos) > 5:
 						raise ValidationError("Ошибка: Вы можете выбрать не более 5 файлов")
@@ -522,6 +638,7 @@ def ad_view(request, ad_pk):
 	is_owner = True if ad.seller == request.user else False
 	is_photo_sent = True if ad.is_photo_sent else False
 	is_visible = True if ad.is_visible else False
+	is_moderated = True if ad.is_moderated else False
 	title = ad.title
 	description = ad.description
 	price = ad.price
@@ -548,6 +665,7 @@ def ad_view(request, ad_pk):
 			"is_visible": is_visible,
 			"is_owner": is_owner,
 			"is_photo_sent": is_photo_sent,
+			"is_moderated": is_moderated,
 			"id": ad_pk,
 			"title": title,
 			"price": price,
@@ -643,6 +761,8 @@ def new_review_view(request, profile_pk):
 		return redirect("/")
 	if not request.user.profile.is_confirmed:
 		return redirect("/confirm")
+	if (timezone.now() - request.user.date_joined).days < 1:
+		return HttpResponse("<h3>Вы не можете оставлять отзывы в течение суток</h3>")
 
 	message = []
 	form = NewReview()
@@ -850,7 +970,7 @@ def edit_category_view(request):
 					profile.categories.set(form.cleaned_data["categories"])
 
 				profile.save()
-				return redirect(f"/account/")
+				return redirect(f"/account/settings/")
 
 		except Exception as e:
 			logging.error(f"{type(e).__name__}: {str(e)}")
@@ -878,7 +998,7 @@ def dialogs_view(request):
 			"user": dialog.user1 if dialog.user1 != request.user else dialog.user2,
 			"last_msg": Message.objects.filter(dialog=dialog).last()
 		}
-		for dialog in dialogs if Message.objects.filter(dialog=dialog).first()
+		for dialog in dialogs
 	]
 
 	return render(
@@ -897,8 +1017,10 @@ def dialog_view(request, dialog_pk):
 		return redirect("/confirm")
 
 	dialog = Dialog.objects.filter(pk=dialog_pk).first()
+	if not dialog:
+		raise Http404
 	if request.user not in (dialog.user1, dialog.user2):
-		return redirect("/")
+		raise Http404
 
 	partner = dialog.user1 if request.user != dialog.user1 else dialog.user2
 	if request.method == "POST":
@@ -922,3 +1044,101 @@ def dialog_view(request, dialog_pk):
 			"partner": partner
 		}
 	)
+
+
+def moderate_view(request):
+	if not request.user.is_staff:
+		raise Http404
+	if request.method == "POST":
+		if is_ajax(request):
+			try:
+				if request.POST.get("action"):
+					request_action = request.POST.get("action").split("-")
+
+					if request_action[0] == "allow":
+						ad = Advertisement.objects.filter(identity=request_action[1]).first()
+						if ad:
+							ad.is_moderated = True
+							ad.save()
+							subject = "Объявление одобрено"
+							msg = f"Здравствуйте, {ad.seller}\nВаше объявление '{ad.title}' одобрено. Теперь вы можете нажать 'Показать' на странице с объявлением и оно будет доступно всем."
+							send_mail(
+								subject=subject,
+								message=msg,
+								receiver=ad.seller.profile.email
+							)
+						return JsonResponse(
+							{
+								"status": "success"
+							}
+						)
+
+					elif request_action[0] == "deny":
+						ad = Advertisement.objects.filter(identity=request_action[1]).first()
+						if ad:
+							ad.delete()
+							subject = "Объявление удалено"
+							msg = f"Здравствуйте, {ad.seller}\nВаше объявление '{ad.title}' не прошло модерацию и оно было удалено."
+							send_mail(
+								subject=subject,
+								message=msg,
+								receiver=ad.seller.profile.email
+							)
+						return JsonResponse(
+							{
+								"status": "success"
+							}
+						)
+
+			except Exception as e:
+				logging.error(f"{type(e).__name__}: {str(e)}")
+				return JsonResponse(
+					{
+						"status": "failed",
+						"message": str(e.message) if str(
+							type(e).__name__) == "ValidationError" else f"{type(e).__name__}: {str(e)}",
+					}
+				)
+	ads = []
+	try:
+		ads = Advertisement.objects.filter(is_moderated=False).all()
+	except Exception as e:
+		logging.error(f"{type(e).__name__}: {str(e)}")
+
+	return render(
+		request,
+		"account/moderate.html",
+		{
+			"ads": ads,
+		}
+	)
+
+
+def edit_dormitory_view(request):
+	if not request.user.is_authenticated:
+		return redirect("/")
+	if not request.user.profile.is_confirmed:
+		return redirect("/confirm")
+	profile = Profile.objects.filter(user=request.user).first()
+	message = []
+	form = EditDormitory()
+	if request.method == "POST":
+		try:
+			form = EditDormitory(request.POST)
+			if form.is_valid():
+				profile.dormitory = form.cleaned_data["dormitory"]
+				profile.save()
+
+				return redirect(f"/account/settings/")
+
+		except Exception as e:
+			logging.error(f"{type(e).__name__}: {str(e)}")
+			message = ["False", f"{type(e).__name__}: {str(e)}"]
+
+	return render(
+		request,
+		"account/edit_dormitory.html",
+		{
+			"form": form,
+			"message": message,
+		})

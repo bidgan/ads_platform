@@ -5,9 +5,19 @@
         <div id="alert" style="display:none;"></div>
         <h3>Случайные объявления</h3>
         <div class="mb-3">
-            <button class="btn btn-secondary" type="button" data-bs-toggle="offcanvas" data-bs-target="#filterOffcanvas">
-              Фильтр по категориям
-            </button>
+            <div class="row">
+                <div class="col-md-5 col-sm-12">
+                    <div class="input-group">
+                      <input type="text" id="search-input" class="form-control" placeholder="Поиск" aria-label="Поиск">
+                      <button id="search-btn" class="btn btn-outline-secondary" type="button" onclick="performAjax2('search')">🔍</button>
+                    </div>
+                </div>
+                <div class="col-md-auto col-sm-12 mt-sm-3">
+                    <button class="btn btn-secondary" type="button" data-bs-toggle="offcanvas" data-bs-target="#filterOffcanvas">
+                      Фильтр по категориям
+                    </button>
+                </div>
+            </div>
 
             <div class="offcanvas offcanvas-end" tabindex="-1" id="filterOffcanvas" aria-labelledby="filterOffcanvasLabel">
               <div class="offcanvas-header">
@@ -32,7 +42,7 @@
         </div>
             <div class="row" id="adsList">
                 {% for ad in ads %}
-                    <div class="col-3 mb-3">
+                    <div class="col-md-3 col-sm-6 mb-3">
                         <div class="card h-100">
                             <a class="text-black" href="/ad/{{ ad.identity }}" style="text-decoration: none">
                             <div class="img-container mt-3" style="max-width: 60%; margin: 0 auto">
@@ -88,7 +98,7 @@
                     response.slice(1).forEach(function(ad) {
                         const formattedDate = moment.utc(ad.updated_at).locale('ru').format('D MMMM YYYY [г.] HH:mm');
 
-                        let adHTML = '<div class="col-3 mb-3">' +
+                        let adHTML = '<div class="col-md-3 col-sm-6 mb-3">' +
                             '<div class="card h-100">' +
                             '<a class="text-black" href="/ad/' + ad.identity + '" style="text-decoration: none">' +
                             '<div class="img-container mt-3" style="max-width: 60%; margin: 0 auto">' +
@@ -105,6 +115,51 @@
                             '</div>';
                         $('#adsList').append(adHTML);
                     });
+                } else if (response[0].status === "failed") {
+                    $("#alert").html("<div class='alert alert-danger'>" + response[0].message + "</div>").show();
+                } else {
+                    console.log("error")
+                }
+
+            },
+            error: function(xhr, status, error) {
+                $("#alert").html("<div class='alert alert-danger'>" + error + "</div>").show();
+            }
+        });
+    }
+
+    function performAjax2(action) {
+        $.ajax({
+            type: "POST",
+            data: {
+                action: action,
+                data: $("#search-input").val(),
+                csrfmiddlewaretoken: "{{ csrf_token }}"
+            },
+            success: function(response) {
+                if (response[0].status === "success") {
+                    $("#adsList").empty();
+                    response.slice(1).forEach(function(ad) {
+                        const formattedDate = moment.utc(ad.updated_at).locale('ru').format('D MMMM YYYY [г.] HH:mm');
+
+                        let adHTML = '<div class="col-md-3 col-sm-6 mb-3">' +
+                            '<div class="card h-100">' +
+                            '<a class="text-black" href="/ad/' + ad.identity + '" style="text-decoration: none">' +
+                            '<div class="img-container mt-3" style="max-width: 60%; margin: 0 auto">' +
+                            '<img src="/static/img/' + ad.identity + '_0.jpg" class="card-img-top" alt="...">' +
+                            '</div>' +
+                            '<div class="card-body">' +
+                            '<h5 class="card-title">' + ad.title + '</h5>' +
+                            '<p class="card-text" style="overflow: hidden; text-overflow: ellipsis; height: 100px;">' +
+                            '<b>' + ad.price + ' руб.</b><br><br>' + formattedDate + ' (UTC)' +
+                            '</p>' +
+                            '</div>' +
+                            '</a>' +
+                            '</div>' +
+                            '</div>';
+                        $('#adsList').append(adHTML);
+                    });
+                    $("#search-input").val("");
                 } else if (response[0].status === "failed") {
                     $("#alert").html("<div class='alert alert-danger'>" + response[0].message + "</div>").show();
                 } else {

@@ -23,6 +23,45 @@
 
         <div class="bg-light mt-3 mb-3 p-5 rounded">
             <div class="text-center">
+                <h1>Мое общежитие</h1>
+                <p class="lead">
+                    <span>Общежитие
+                    {% if dormitory %}
+                    №{{ dormitory }}
+                    {% else %}
+                        Не задано
+                    {% endif %}</span>
+                    <div style="max-width: 60%; margin: 0 auto">
+                        <div class="mt-3">
+                            <a href="{% url 'edit_dormitory' %}" class="btn btn-outline-info">Изменить</a>
+                        </div>
+                    </div>
+                </p>
+            </div>
+        </div>
+
+        <div class="bg-light mt-3 mb-3 p-5 rounded">
+            <div class="text-center">
+                <h1>Мои категории</h1>
+                <p class="lead">
+                    <div class="row">
+                        <div class="">
+                            <ul class="list-group" style="max-width: 60%; margin: 0 auto">
+                                {% for category in categories %}
+                                    <li class="list-group-item">{{ category.title }}</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="mt-3">
+                        <a href="{% url 'edit_category' %}" class="btn btn-outline-info">Изменить</a>
+                    </div>
+                </p>
+            </div>
+        </div>
+
+        <div class="bg-light mt-3 mb-3 p-5 rounded">
+            <div class="text-center">
                 <h1>Аватарка</h1>
                 <p class="lead">
                     {% if is_avatar %}

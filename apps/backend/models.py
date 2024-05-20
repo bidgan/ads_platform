@@ -15,11 +15,25 @@ class Category(models.Model):
 		return self.title
 
 
+# Общежитие
+class Dormitory(models.Model):
+	number = models.IntegerField(verbose_name="Номер общежития")
+	description = models.CharField(verbose_name="Описание", max_length=256)
+
+	class Meta:
+		verbose_name = "Общежитие"
+		verbose_name_plural = "Общежития"
+
+	def __str__(self):
+		return f"{self.number}"
+
+
 # Профиль
 class Profile(models.Model):
 	user = models.OneToOneField(User, verbose_name="Пользователь", on_delete=models.CASCADE)
 	email = models.CharField(verbose_name="Почта", max_length=64, blank=True)
 	full_name = models.CharField(verbose_name="Имя", max_length=128, blank=True)
+	dormitory = models.ForeignKey(Dormitory, verbose_name="Общежитие", on_delete=models.DO_NOTHING, null=True)
 	is_confirmed = models.BooleanField(verbose_name="Подтверждено", default=False)
 	is_avatar = models.BooleanField(verbose_name="Есть аватарка", default=False)
 	verify_code = models.CharField(verbose_name="Код подтверждения", max_length=6, blank=True)
@@ -39,10 +53,10 @@ class Profile(models.Model):
 # Отзыв
 class Review(models.Model):
 	identity = models.CharField(verbose_name="Идентификатор", max_length=32, null=True)
-	user = models.OneToOneField(User, verbose_name="Пользователь", related_name="user_review", on_delete=models.CASCADE)
+	user = models.ForeignKey(User, verbose_name="Пользователь", related_name="user_review", on_delete=models.CASCADE)
 	mark = models.IntegerField(verbose_name="Оценка", validators=[MinValueValidator(1), MaxValueValidator(5)])
 	text = models.TextField(verbose_name="Текст отзыва", max_length=4096)
-	reviewer = models.OneToOneField(User, verbose_name="Автор", related_name="reviewer_review", on_delete=models.SET_NULL, null=True)
+	reviewer = models.ForeignKey(User, verbose_name="Автор", related_name="reviewer_review", on_delete=models.SET_NULL, null=True)
 	is_photo_sent = models.BooleanField(verbose_name="Фото отправлено", default=False)
 	num_photos = models.IntegerField(verbose_name="Количество загруженных фото", default=0)
 	updated_at = models.DateTimeField(verbose_name="Изменено", editable=False, auto_now=True)
@@ -67,6 +81,7 @@ class Advertisement(models.Model):
 	num_photos = models.IntegerField(verbose_name="Количество загруженных фото", default=0)
 	is_photo_sent = models.BooleanField(verbose_name="Фото отправлено", default=False)
 	is_visible = models.BooleanField(verbose_name="Объявление открыто", default=False)
+	is_moderated = models.BooleanField(verbose_name="Прошло модерацию", default=False)
 	updated_at = models.DateTimeField(verbose_name="Изменено", editable=False, auto_now=True)
 	created_at = models.DateTimeField(verbose_name="Создано", editable=False, auto_now_add=True)
 
@@ -80,8 +95,10 @@ class Advertisement(models.Model):
 
 # Диалог
 class Dialog(models.Model):
-	user1 = models.ForeignKey(User, verbose_name="Пользователь 1", related_name="dialog_user1", on_delete=models.CASCADE)
-	user2 = models.ForeignKey(User, verbose_name="Пользователь 2", related_name="dialog_user2", on_delete=models.CASCADE)
+	user1 = models.ForeignKey(User, verbose_name="Пользователь 1", related_name="dialog_user1",
+							  on_delete=models.CASCADE)
+	user2 = models.ForeignKey(User, verbose_name="Пользователь 2", related_name="dialog_user2",
+							  on_delete=models.CASCADE)
 
 	class Meta:
 		verbose_name = "Диалог"

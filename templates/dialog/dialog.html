@@ -4,29 +4,36 @@
 <div class="container">
     <div class="row justify-content-center">
         {% if message %}
-            <div class="alert {% if message.0 == 'True' %}alert-success{% else %}alert-danger{% endif %} text-center" role="alert">
-                {{ message.1 }}
-            </div>
+            {% if message %}
+                {% if message.0 == "True" %}
+                    <div class="alert alert-success text-center" role="alert">
+                {% elif message.0 == "False" %}
+                    <div class="alert alert-danger text-center" role="alert">
+                {% endif %}
+                    {{ message.1 }}
+                </div>
+            {% endif %}
         {% endif %}
         <div class="col-10">
             <div class="parent justify-content-center align-items-center">
                 <div class="p-3 rounded">
-                    <h2 class="text-center">Диалог с {{ partner }}</h2>
+                    <h2 class="text-center">Диалог с <a href="{% url 'other_account' profile_pk=partner %}">{{ partner }}</a></h2>
                     <hr>
                     <div class="message-container" style="max-height: 400px; overflow-y: auto">
                         <div class="message">
                             {% for message in messages %}
                                 {% if message.sender != request.user %}
-                                    <div class="receive card text-dark mb-2">
+                                    <div class="receive card text-dark mb-2" style="background-color: #8181fa;">
                                         <div class="card-body">
                                             <p class="card-text">
-                                            {{ message.message }} <strong>-{{ message.sender }}</strong><br>
+                                            <b>{{ message.sender }}</b><br>
+                                            {{ message.message }}<br>
                                             {{ message.created_at }}
                                             </p>
                                         </div>
                                     </div>
                                 {% else %}
-                                    <div class="send card text-dark mb-2">
+                                    <div class="send card text-dark mb-2" style="background-color: lightblue;">
                                         <div class="card-body">
                                             <p class="card-text">
                                             {{ message.message }}<br>
@@ -54,17 +61,17 @@
 
 <script>
     function scrollToBottom() {
-        let messageContainer = $('.message-container');
-        messageContainer.scrollTop(messageContainer.prop('scrollHeight'));
+        let messageContainer = $(".message-container");
+        messageContainer.scrollTop(messageContainer.prop("scrollHeight"));
     }
 
-    $(document).on('submit', '#message', function(e){
+    $(document).on("submit", "#message", function(e){
         e.preventDefault();
         $.ajax({
-            type: 'POST',
+            type: "POST",
             url: "",
             data: {
-                message: $('#msg').val(),
+                message: $("#msg").val(),
                 csrfmiddlewaretoken: "{{ csrf_token }}"
             }
         });
@@ -76,11 +83,11 @@
         scrollToBottom();
 
         setInterval(function(){
-            let messageContainer = $('.message-container');
-            let prevScrollHeight = messageContainer.prop('scrollHeight');
+            let messageContainer = $(".message-container");
+            let prevScrollHeight = messageContainer.prop("scrollHeight");
 
             $(".message").load(window.location.href + " .message", function() {
-                let newScrollHeight = messageContainer.prop('scrollHeight');
+                let newScrollHeight = messageContainer.prop("scrollHeight");
                 if (newScrollHeight > prevScrollHeight) {
                     scrollToBottom();
                 }

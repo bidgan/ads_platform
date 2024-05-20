@@ -26,30 +26,16 @@
             <div class="col-md-4">
                 <div class="avatar-container">
                     {% if is_avatar %}
-                        <div class="img-container mt-3" style="">
+                        <div class="img-container mt-3" style="max-width: 60%">
                              <img src="/static/img/{{ nickname }}.jpg" class="card-img-top" alt="...">
                         </div>
                     {% endif %}
-
                     <h2>{{ nickname }}</h2>
                     <h3>{{ full_name }}</h3>
+                    {% if dormitory %}
+                        <h4>Общежитие №{{ dormitory }}</h4>
+                    {% endif %}
                     <h4>Рейтинг: {{ rating }}/5</h4>
-                </div>
-            </div>
-        </div>
-        <hr>
-        <div class="row mt-4">
-            <div class="col-md-12">
-                <h3>Мои категории</h3>
-                <a href="{% url 'edit_category' %}" id="edit-category-btn" class="btn btn-outline-primary">Изменить</a><br><br>
-                <div class="row">
-                    <div class="col-3">
-                        <ul class="list-group">
-                            {% for category in categories %}
-                                <li class="list-group-item">{{ category.title }}</li>
-                            {% endfor %}
-                        </ul>
-                    </div>
                 </div>
             </div>
         </div>
@@ -60,7 +46,7 @@
                 <a href="{% url 'new_ad' %}" class="btn btn-outline-success">Создать объявление</a><br><br>
                 <div class="row">
                     {% for ad in ads %}
-                        <div class="col-3">
+                        <div class="col-md-3 col-sm-6 mb-3">
                             <div class="card h-100">
                                 <a class="text-black" href="/ad/{{ ad.identity }}" style="text-decoration: none">
                                 <div class="img-container mt-3" style="max-width: 60%; margin: 0 auto">

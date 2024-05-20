@@ -16,7 +16,7 @@
             <div id="popup" style="display: none"></div>
             <div class="col-12">
                 {% if is_visible %}
-                    {% if is_owner %}
+                    {% if is_owner or request.user.is_staff %}
                         <div id="ad_status" class="bg-light mt-3 p-5 rounded text-center">
                             <h2>Объявление <span id="ad_status_text" class="text-success">активно</span></h2>
                             <div id="btn-sector">
@@ -33,7 +33,7 @@
                       <p class="lead">
                         <b>{{ price }} руб.</b><br><br>
                         {% if is_photo_sent %}
-                            <div class="carousel-container mb-3" style="max-width: 40%; margin: 0 auto">
+                            <div class="carousel-container mb-3" style="max-width: 60%; margin: 0 auto">
                                 <div id="carouselExample" class="carousel slide">
                                   <div class="carousel-inner">
                                     <div class="carousel-item active">
@@ -70,12 +70,17 @@
                       </div>
 
                       <a class="btn btn-outline-primary btn-lg" href="{% url 'other_account' profile_pk=author%}" role="button">Профиль</a>
+                        {% if request.user.is_authenticated and seller != request.user %}
+                            <a id="start_dialog_btn" class="btn btn-outline-primary btn-lg">Личное сообщение</a><br><br>
+                        {% endif %}
                     </div>
                 {% else %}
-                    {% if is_owner %}
+                    {% if is_owner or request.user.is_staff %}
                         <div id="ad_status" class="bg-light mt-3 p-5 rounded text-center">
                             <h2>Объявление <span id="ad_status_text" class="text-danger">не активно</span></h2>
-                            {% if is_photo_sent %}
+                            {% if not is_moderated %}
+                                <h4><span class="text-danger">Не прошло модерацию</span></h4>
+                            {% elif is_photo_sent %}
                                 <div id="btn-sector">
                                     <button type="button" id="active-ad-btn" class="btn btn-lg btn-outline-success">Показать</button>
                                 </div>
@@ -91,7 +96,7 @@
                           <p class="lead">
                             <b>{{ price }} руб.</b><br><br>
                             {% if is_photo_sent %}
-                                <div class="carousel-container mb-3" style="max-width: 40%; margin: 0 auto">
+                                <div class="carousel-container mb-3" style="max-width: 60%; margin: 0 auto">
                                     <div id="carouselExample" class="carousel slide">
                                       <div class="carousel-inner">
                                         <div class="carousel-item active">
@@ -249,6 +254,9 @@
                                 window.location.href = "{% url 'account' %}";
                             }, 2000);
 
+                        } else if (_action === "start_dialog") {
+                            let url = `{% url 'index' %}account/dialogs/${response.message}/`;
+                            window.location.href = url;
                         }
 
                     } else if (response.status === "failed") {
@@ -278,6 +286,10 @@
 
         $("#delete-ad-btn").click(function() {
             performAjaxRequest("delete");
+        });
+
+        $("#start_dialog_btn").click(function() {
+            performAjaxRequest("start_dialog");
         });
     });
 </script>
